@@ -10,6 +10,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<UserService>();  
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
