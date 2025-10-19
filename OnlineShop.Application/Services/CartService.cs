@@ -16,21 +16,48 @@ namespace OnlineShop.Application.Services
         {
             _context = context;
         }
-        public IEnumerable<CartItem>GetAllItems()=>_context.CartItems.ToList();
+      
 
-        public void AddItem(CartItem item)
+        public IEnumerable<CartItem> GetCartForUser(Guid userId)
         {
-            _context.CartItems.Add(item);   
-            _context.SaveChanges(); 
+            return _context.CartItems
+                .Where(c => c.UserId == userId)
+                .ToList();
         }
-        public void RemoveItem(Guid id)
+
+        public void AddItem(Guid userId, Guid productId, int quantity)
         {
-            var item=_context.CartItems.Find(id);
+            var existingItem = _context.CartItems
+                .FirstOrDefault(c => c.UserId == userId && c.ProductId == productId);
+
+            if (existingItem != null)
+            {
+                existingItem.Quantity += quantity;
+            }
+            else
+            {
+                var newItem = new CartItem
+                {
+                    UserId = userId,
+                    ProductId = productId,
+                    Quantity = quantity
+                };
+                _context.CartItems.Add(newItem);
+            }
+
+            _context.SaveChanges();
+        }
+        public void RemoveItem(Guid userId, Guid productId)
+        {
+            var item = _context.CartItems
+                .FirstOrDefault(c => c.UserId == userId && c.ProductId == productId);
+
             if (item != null)
             {
                 _context.CartItems.Remove(item);
                 _context.SaveChanges();
             }
         }
+
     }
 }

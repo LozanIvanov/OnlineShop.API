@@ -14,22 +14,25 @@ namespace OnlineShop.API.Controllers
         {
             _service = service;
         }
-
-        [HttpGet]
-        public IActionResult GetAll() => Ok(_service.GetAllItems());
-
-        [HttpPost]
-        public IActionResult Add(CartItem item)
+        [HttpGet("{userId}")]
+        public IActionResult GetCart(Guid userId)
         {
-            _service.AddItem(item);
-            return Ok(item);
+            return Ok(_service.GetCartForUser(userId));
         }
 
-        [HttpDelete("{id}")]
-        public IActionResult Remove(Guid id)
+        [HttpPost("{userId}/{productId}")]
+        public IActionResult AddItem(Guid userId, Guid productId, [FromQuery] int quantity = 1)
         {
-            _service.RemoveItem(id);
-            return Ok();
+            _service.AddItem(userId, productId, quantity);
+            return Ok("Item added to cart");
         }
+
+        [HttpDelete("{userId}/{productId}")]
+        public IActionResult RemoveItem(Guid userId, Guid productId)
+        {
+            _service.RemoveItem(userId, productId);
+            return Ok("Item removed from cart");
+        }
+
     }
 }
