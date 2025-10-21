@@ -9,9 +9,10 @@ namespace OnlineShop.Domain.Entities
     public class User
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        public string   Usename { get; set; }
+        public string   Username { get; set; }
         public string Password { get; set; }
         public string Email { get; set; }
+        public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
     }
 }

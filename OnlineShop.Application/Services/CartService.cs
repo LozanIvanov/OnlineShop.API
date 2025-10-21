@@ -1,10 +1,9 @@
 ﻿using OnlineShop.Domain.Entities;
 using OnlineShop.Infrastructure.Data;
+using OnlineShop.Application.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OnlineShop.Application.Services
 {
@@ -16,48 +15,55 @@ namespace OnlineShop.Application.Services
         {
             _context = context;
         }
-      
 
-        public IEnumerable<CartItem> GetCartForUser(Guid userId)
+        public IEnumerable<CartItemResponse> GetCartForUser(Guid userId)
         {
-            return _context.CartItems
-                .Where(c => c.UserId == userId)
+            return _context.Set<CartItem>()
+                .Where(ci => ci.UserId == userId)
+                .Select(ci => new CartItemResponse
+                {
+                    ProductId = ci.ProductId,
+                    ProductName = ci.Product.Name,
+                    Price = ci.Product.Price,
+                    Quantity = ci.Quantity
+                })
                 .ToList();
         }
 
         public void AddItem(Guid userId, Guid productId, int quantity)
         {
-            var existingItem = _context.CartItems
-                .FirstOrDefault(c => c.UserId == userId && c.ProductId == productId);
+            var cartItem = _context.Set<CartItem>()
+                .FirstOrDefault(ci => ci.UserId == userId && ci.ProductId == productId);
 
-            if (existingItem != null)
+            if (cartItem != null)
             {
-                existingItem.Quantity += quantity;
+
+                cartItem.Quantity += quantity;
             }
             else
             {
-                var newItem = new CartItem
+                cartItem = new CartItem
                 {
                     UserId = userId,
                     ProductId = productId,
                     Quantity = quantity
                 };
-                _context.CartItems.Add(newItem);
+                _context.Set<CartItem>().Add(cartItem);
             }
 
             _context.SaveChanges();
         }
+
         public void RemoveItem(Guid userId, Guid productId)
         {
-            var item = _context.CartItems
-                .FirstOrDefault(c => c.UserId == userId && c.ProductId == productId);
+            var cartItem = _context.Set<CartItem>()
+                .FirstOrDefault(ci => ci.UserId == userId && ci.ProductId == productId);
 
-            if (item != null)
+            if (cartItem != null)
             {
-                _context.CartItems.Remove(item);
+                _context.Set<CartItem>().Remove(cartItem);
                 _context.SaveChanges();
             }
         }
-
     }
 }

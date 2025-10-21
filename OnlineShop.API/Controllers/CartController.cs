@@ -1,11 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using OnlineShop.Application.Services;
-using OnlineShop.Domain.Entities;
+using OnlineShop.Application.DTOs;
+using System;
+using System.Linq;
+using System.Security.Claims;
 
 namespace OnlineShop.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CartController : ControllerBase
     {
         private readonly CartService _service;
@@ -14,25 +19,44 @@ namespace OnlineShop.API.Controllers
         {
             _service = service;
         }
-        [HttpGet("{userId}")]
-        public IActionResult GetCart(Guid userId)
+
+        [HttpGet]
+        public IActionResult GetCart()
         {
-            return Ok(_service.GetCartForUser(userId));
+            var userId = GetUserIdFromToken();
+            var cart = _service.GetCartForUser(userId)
+                               .Select(ci => new CartItemResponse
+                               {
+                                   ProductId = ci.ProductId,
+                                   ProductName = ci.ProductName,
+                                   Price = ci.Price,
+                                   Quantity = ci.Quantity
+                               });
+            return Ok(cart);
         }
 
-        [HttpPost("{userId}/{productId}")]
-        public IActionResult AddItem(Guid userId, Guid productId, [FromQuery] int quantity = 1)
+        [HttpPost]
+        public IActionResult AddItem([FromBody] AddCartItemRequest request)
         {
-            _service.AddItem(userId, productId, quantity);
+            var userId = GetUserIdFromToken();
+            _service.AddItem(userId, request.ProductId, request.Quantity);
             return Ok("Item added to cart");
         }
 
-        [HttpDelete("{userId}/{productId}")]
-        public IActionResult RemoveItem(Guid userId, Guid productId)
+        [HttpDelete("{productId}")]
+        public IActionResult RemoveItem(Guid productId)
         {
+            var userId = GetUserIdFromToken();
             _service.RemoveItem(userId, productId);
             return Ok("Item removed from cart");
         }
 
+        private Guid GetUserIdFromToken()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            if (userIdClaim == null)
+                throw new Exception("UserId not found in token");
+            return Guid.Parse(userIdClaim.Value);
+        }
     }
 }
