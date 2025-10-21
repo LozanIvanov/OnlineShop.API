@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OnlineShop.Application.Services;
 using OnlineShop.Domain.Entities;
+using System.Security.Claims;
 
 namespace OnlineShop.API.Controllers
 {
@@ -14,17 +15,24 @@ namespace OnlineShop.API.Controllers
         {
             _orderService = orderService;
         }
+       private Guid GetUserId() =>
+            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
         [HttpGet]
-        public IActionResult GetAll()=>Ok(_orderService.GetAllOrders());    
+        public IActionResult GetOrders()
+        {
+            var userId = GetUserId();
+            var orders = _orderService.GetOrdersByUser(userId);
+            return Ok(orders);
+        }
 
         [HttpPost]
-
-        public IActionResult Create (Order order)
+        public IActionResult CreateOrder()
         {
-            _orderService.AddOrder(order);
-
+            var userId = GetUserId();
+            var order = _orderService.CreateOrder(userId);
             return Ok(order);
         }
-        
+
     }
 }
