@@ -1,12 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Security.Claims;
 
 namespace OnlineShop.API.Controllers
 {
-    public class BaseController : Controller
+    [ApiController]
+    public class BaseController : ControllerBase
     {
-        public IActionResult Index()
+        protected Guid GetUserIdFromToken()
         {
-            return View();
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                throw new Exception("User ID not found in token.");
+
+            return Guid.Parse(userIdClaim);
         }
     }
 }
+

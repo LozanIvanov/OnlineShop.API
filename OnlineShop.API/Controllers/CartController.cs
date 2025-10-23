@@ -6,6 +6,8 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 
+
+
 namespace OnlineShop.API.Controllers
 {
     [ApiController]
@@ -20,43 +22,29 @@ namespace OnlineShop.API.Controllers
             _service = service;
         }
 
+    
         [HttpGet]
         public IActionResult GetCart()
         {
-            var userId = GetUserIdFromToken();
-            var cart = _service.GetCartForUser(userId)
-                               .Select(ci => new CartItemResponse
-                               {
-                                   ProductId = ci.ProductId,
-                                   ProductName = ci.ProductName,
-                                   Price = ci.Price,
-                                   Quantity = ci.Quantity
-                               });
-            return Ok(cart);
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var cartItems = _service.GetCartForUser(userId);
+            return Ok(cartItems);
         }
 
-        [HttpPost]
-        public IActionResult AddItem([FromBody] AddCartItemRequest request)
+        [HttpPost("{productId}")]
+        public IActionResult AddToCart(Guid productId, [FromQuery] int quantity = 1)
         {
-            var userId = GetUserIdFromToken();
-            _service.AddItem(userId, request.ProductId, request.Quantity);
-            return Ok("Item added to cart");
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            _service.AddItem(userId, productId, quantity);
+            return Ok("Item added to cart.");
         }
 
         [HttpDelete("{productId}")]
-        public IActionResult RemoveItem(Guid productId)
+        public IActionResult RemoveFromCart(Guid productId)
         {
-            var userId = GetUserIdFromToken();
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
             _service.RemoveItem(userId, productId);
-            return Ok("Item removed from cart");
-        }
-
-        private Guid GetUserIdFromToken()
-        {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
-            if (userIdClaim == null)
-                throw new Exception("UserId not found in token");
-            return Guid.Parse(userIdClaim.Value);
+            return Ok("Item removed from cart.");
         }
     }
 }
